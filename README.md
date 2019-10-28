@@ -1,7 +1,6 @@
 # OgreGPUVoxels
 
-Geometry generation on gpu by using 3D render volumes as the density function.
-
+Geometry generation on gpu by using 3D render volumes as the density function for Ogre3D.
 
 The approach is (ignoring the technical details)
 
@@ -13,7 +12,6 @@ List triangles on gpu (i.e. cubecase).
 
 iff a none zero vertex out count, gen triangles on gpu.
 
-
 A higher level lod stratedy handles the creation and recreation of chucks, including transvoxel faces as needed for the transitions between different lods. Transitions are also created on gpu.
 
 A single render volume per lowest lod level of a chuck smothing between transitions.
@@ -21,7 +19,6 @@ A single render volume per lowest lod level of a chuck smothing between transiti
 Demo
 
 https://vimeo.com/368979548
-
 
 References
 
