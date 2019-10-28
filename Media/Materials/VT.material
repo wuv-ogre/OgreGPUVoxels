@@ -1,0 +1,714 @@
+shared_params VT/SharedParams
+{
+	shared_param_named g_voxel_dim float 0
+	shared_param_named g_margin float 0
+	shared_param_named g_voxel_dim_minus_one float 0 
+	shared_param_named g_voxel_dim_minus_two float 0 
+	shared_param_named g_inv_voxel_dim float2 0 0
+	shared_param_named g_inv_voxel_dim_minus_one float2 0 0
+	shared_param_named g_voxel_dim_plus_margin float2 0 0
+	shared_param_named g_inv_voxel_dim_plus_margin float2 0 0
+	shared_param_named g_inv_voxel_dim_plus_margin_minus_one float2 0 0
+	shared_param_named g_inv_density_volume_size float2 0 0
+	shared_param_named g_lod_count float 0
+	shared_param_named g_transition_width float 0.5
+	shared_param_named g_world_space_chunk_size_lod_zero float3 0 0 0
+	
+	shared_param_named g_world_space_chunk_pos float3 0 0 0
+	shared_param_named g_world_space_chunk_size float3 0 0 0
+	shared_param_named g_world_space_voxel_size float3 0 0 0
+	shared_param_named g_lod_index float 0
+	shared_param_named g_lod_scale float 1 
+	shared_param_named g_sampler_density_tex_step float2 0 0
+	shared_param_named g_lod_quadrant_offset_uvw float3 0 0 0
+	
+	shared_param_named g_transition_face float3 0 0 1 
+	shared_param_named g_one_minus_transition_face float3 1 1 0
+	shared_param_named g_transition_face_side float 1
+	shared_param_named g_transition_face_idx float 0
+	
+	shared_param_named g_step_pixels float 1
+	shared_param_named g_margin_pixels float 1
+	shared_param_named g_quadrant_offset_pixels float3 0 0 0
+}
+
+vertex_program VT/Density/VP_GLSL_150 glsl
+{
+	source VT_Density_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+		param_named slice float 0
+	}
+}
+
+fragment_program Noise/Noise_Simplex3d/GLSL glsl
+{
+    source Noise_Simplex3d.glsl
+}
+
+fragment_program VT/Density/FP_GLSL_150 glsl
+{
+	source VT_Density_fp.glsl
+    attach Noise/Noise_Simplex3d/GLSL
+	syntax glsl150
+}
+
+material VT/Density
+{
+	technique 
+	{
+		pass
+		{
+			lighting off
+			depth_check off
+			depth_write off
+
+			vertex_program_ref VT/Density/VP_GLSL_150
+			{
+				shared_params_ref VT/SharedParams
+			}
+			
+			fragment_program_ref VT/Density/FP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+
+
+vertex_program VT/DensityArray/VP_GLSL_150 glsl
+{
+	source VT_DensityArray_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+		param_named_auto viewport_size viewport_size
+	}
+}
+
+material VT/DensityArray
+{
+	technique 
+	{
+		pass
+		{
+			lighting off
+			depth_check off
+			depth_write off
+			
+			vertex_program_ref VT/DensityArray/VP_GLSL_150
+			{
+				shared_params_ref VT/SharedParams
+			}
+			
+			fragment_program_ref VT/Density/FP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+
+vertex_program VT/ListTriangles/VP_GLSL_150 glsl
+{
+	source VT_ListTriangles_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+	}
+}
+
+geometry_program VT/ListTriangles/GP_GLSL_150 glsl
+{
+	source VT_ListTriangles_gp.glsl
+	syntax glsl150
+}
+
+material VT/ListTriangles
+{
+	technique 
+	{
+		pass
+		{
+			vertex_program_ref VT/ListTriangles/VP_GLSL_150
+			{			
+				param_named sDensity int 0
+
+				shared_params_ref VT/SharedParams
+			}
+			
+			geometry_program_ref VT/ListTriangles/GP_GLSL_150
+			{
+				shared_params_ref VT/SharedParams
+			}
+			
+			texture_unit sDensity
+			{
+				tex_address_mode clamp
+				filtering none
+			}
+		}
+	}
+}
+
+
+
+
+
+
+
+vertex_program VT/GenTriangles/VP_GLSL_150 glsl
+{
+	source VT_GenTriangles_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		//param_named_auto g_density_inverse_texture_size	inverse_texture_size 0
+	}
+}
+
+geometry_program VT/GenTriangles/GP_GLSL_150 glsl
+{
+	source VT_GenTriangles_gp.glsl
+	syntax glsl150
+}
+
+material VT/GenTriangles
+{
+	technique 
+	{
+		pass
+		{
+			vertex_program_ref VT/GenTriangles/VP_GLSL_150
+			{			
+				param_named sDensity int 0
+				param_named sTriTable int 1
+
+				shared_params_ref VT/SharedParams
+			}
+			
+			geometry_program_ref VT/GenTriangles/GP_GLSL_150
+			{
+			}
+			
+			texture_unit sDensity
+			{
+				tex_address_mode clamp
+				//filtering none
+			}
+			
+			texture_unit sTriTable
+			{
+				tex_address_mode clamp
+				filtering none
+			}
+		}
+	}
+}
+
+vertex_program VT/GenTrianglesDelta/VP_GLSL_150 glsl
+{
+	source VT_GenTriangles_vp.glsl
+	syntax glsl150
+	preprocessor_defines INCLUDE_DELTA=1
+}
+
+geometry_program VT/GenTrianglesDelta/GP_GLSL_150 glsl
+{
+	source VT_GenTriangles_gp.glsl
+	syntax glsl150
+	preprocessor_defines INCLUDE_DELTA=1
+}
+
+material VT/GenTrianglesDelta
+{
+	technique 
+	{
+		pass
+		{
+			vertex_program_ref VT/GenTrianglesDelta/VP_GLSL_150
+			{			
+				param_named sDensity int 0
+				param_named sTriTable int 1
+
+				shared_params_ref VT/SharedParams
+			}
+			
+			geometry_program_ref VT/GenTrianglesDelta/GP_GLSL_150
+			{
+				shared_params_ref VT/SharedParams
+			}
+			
+			texture_unit sDensity
+			{
+				tex_address_mode clamp
+				//filtering none
+			}
+			
+			texture_unit sTriTable
+			{
+				tex_address_mode clamp
+				filtering none
+
+			}
+		}
+	}
+}
+
+
+
+vertex_program VT/Display/VP_GLSL_150 glsl
+{
+	source VT_Display_vp.glsl
+	syntax glsl150
+
+	default_params
+	{
+        param_named_auto worldviewproj_matrix worldviewproj_matrix
+        param_named_auto worldview_matrix worldview_matrix
+        param_named_auto view_matrix view_matrix
+	}
+}
+
+fragment_program VT/Display/FP_GLSL_150 glsl
+{
+    source VT_Display_fp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto highlight custom 10
+	}
+}
+
+material VT/Display
+{
+	technique 
+	{
+		pass
+		{
+			cull_hardware none
+		
+			vertex_program_ref VT/Display/VP_GLSL_150
+			{
+			}
+			
+			fragment_program_ref VT/Display/FP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+vertex_program VT/DisplayDelta/VP_GLSL_150 glsl
+{
+	source VT_Display_vp.glsl
+	syntax glsl150
+	preprocessor_defines INCLUDE_DELTA=1
+
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+        param_named_auto worldview_matrix worldview_matrix
+        param_named_auto view_matrix view_matrix
+
+		param_named_auto deltaFacesPos custom 0
+		param_named_auto deltaFacesNeg custom 1
+	}
+}
+
+
+material VT/DisplayDelta
+{
+	technique 
+	{
+		pass
+		{
+			cull_hardware none
+		
+			vertex_program_ref VT/DisplayDelta/VP_GLSL_150
+			{
+			}
+			
+			fragment_program_ref VT/Display/FP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+
+
+
+vertex_program VT/TransitionListTriangles/VP_GLSL_150 glsl
+{
+	source VT_TransitionListTriangles_vp.glsl
+	syntax glsl150
+}
+
+geometry_program VT/TransitionListTriangles/GP_GLSL_150 glsl
+{
+	source VT_TransitionListTriangles_gp.glsl
+	syntax glsl150
+}
+
+material VT/TransitionListTriangles
+{
+	technique 
+	{
+		pass
+		{
+			vertex_program_ref VT/TransitionListTriangles/VP_GLSL_150
+			{			
+				param_named sDensity int 0
+
+				shared_params_ref VT/SharedParams
+			}
+			
+			geometry_program_ref VT/TransitionListTriangles/GP_GLSL_150
+			{
+				shared_params_ref VT/SharedParams
+			}
+			
+			texture_unit sDensity
+			{
+				tex_address_mode clamp
+				//filtering none
+			}
+		}
+	}
+}
+
+
+
+
+vertex_program VT/TransitionGenTriangles/VP_GLSL_150 glsl
+{
+	source VT_TransitionGenTriangles_vp.glsl
+	syntax glsl150
+}
+
+geometry_program VT/TransitionGenTriangles/GP_GLSL_150 glsl
+{
+	source VT_TransitionGenTriangles_gp.glsl
+	syntax glsl150
+}
+
+material VT/TransitionGenTriangles
+{
+	technique 
+	{
+		pass
+		{
+			vertex_program_ref VT/TransitionGenTriangles/VP_GLSL_150
+			{			
+				param_named sDensity int 0
+				param_named sTriTable int 1
+
+				shared_params_ref VT/SharedParams
+			}
+			
+			geometry_program_ref VT/TransitionGenTriangles/GP_GLSL_150
+			{
+			}
+			
+			texture_unit sDensity
+			{
+				tex_address_mode clamp
+				//filtering none
+			}
+			
+			texture_unit sTriTable
+			{
+				tex_address_mode clamp
+				filtering none
+			}
+		}
+	}
+}
+
+
+
+vertex_program VT/RayCast/VP_GLSL_150 glsl
+{
+	source VT_RayCast_vp.glsl
+	syntax glsl150
+}
+
+geometry_program VT/RayCast/GP_GLSL_150 glsl
+{
+	source VT_RayCast_gp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named rayOrigin float3 0 0 0
+		param_named rayDir float3 0 1 0
+		param_named rayLength float 1000
+	}
+}
+
+material VT/RayCast
+{
+	technique 
+	{
+		pass
+		{
+			vertex_program_ref VT/RayCast/VP_GLSL_150
+			{			
+			}
+			
+			geometry_program_ref VT/RayCast/GP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+
+
+
+vertex_program VT/Nibbler/VP_GLSL_150 glsl
+{
+	source VT_Nibbler_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+		param_named slice float 0
+	}
+}
+
+fragment_program VT/Nibbler/FP_GLSL_150 glsl
+{
+	source VT_Nibbler_fp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named g_nibbler_position float3 0 0 0
+		param_named g_nibbler_attenuation float4 0 0 0 0
+		param_named g_nibbler_magnitude float 1.0
+	}
+}
+
+material VT/Nibbler
+{
+	technique 
+	{
+		pass
+		{
+			lighting off
+			
+			scene_blend add
+			scene_blend_op reverse_subtract
+			depth_check off
+			depth_write off
+			cull_hardware none
+		
+			vertex_program_ref VT/Nibbler/VP_GLSL_150
+			{
+				shared_params_ref VT/SharedParams
+			}
+			
+			fragment_program_ref VT/Nibbler/FP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+
+vertex_program PassThrough/PositionAndDepth/VP_GLSL_150 glsl
+{
+	source PassThrough_PositionAndDepth_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+	}
+}
+
+fragment_program PassThrough/Depth/FP_GLSL_150 glsl
+{
+	source PassThrough_Depth_fp.glsl
+	syntax glsl150
+}
+
+material PassThrough/Depth
+{
+	technique 
+	{
+		pass
+		{		
+			vertex_program_ref PassThrough/PositionAndDepth/VP_GLSL_150
+			{
+			}
+			
+			fragment_program_ref PassThrough/Depth/FP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+
+fragment_program VT/Density/Craftscape/FP_GLSL_150 glsl
+{
+	source VT_Density_Crafscape_fp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named heights int 0
+	}
+}
+
+material VT/Density/Craftscape
+{
+	technique 
+	{
+		pass
+		{
+			lighting off
+			depth_check off
+			depth_write off
+
+			vertex_program_ref VT/Density/VP_GLSL_150
+			{
+				shared_params_ref VT/SharedParams
+			}
+			
+			fragment_program_ref VT/Density/Craftscape/FP_GLSL_150
+			{
+				param_named heights int 0
+			}
+			
+			texture_unit heights
+			{
+				tex_address_mode clamp
+			}
+		}
+	}
+}
+
+
+vertex_program VT/InfluenceWrite/VP_GLSL_150 glsl
+{
+	source VT_InfluenceWrite_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+	}
+}
+
+fragment_program VT/InfluenceWrite/FP_GLSL_150 glsl
+{
+	source VT_InfluenceWrite_fp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named g_influence float 1.0
+	}
+}
+
+material VT/InfluenceWrite
+{
+	technique 
+	{
+		pass
+		{
+			lighting off
+			
+			scene_blend add
+			depth_check off
+			depth_write off
+			cull_hardware none
+		
+			vertex_program_ref VT/InfluenceWrite/VP_GLSL_150
+			{
+			}
+			
+			fragment_program_ref VT/InfluenceWrite/FP_GLSL_150
+			{
+			}
+		}
+	}
+}
+
+
+
+
+vertex_program VT/InfluencePropagate/VP_GLSL_150 glsl
+{
+	source VT_InfluencePropagate_vp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+		param_named_auto viewport_size viewport_size
+	}
+}
+
+fragment_program VT/InfluencePropagate/FP_GLSL_150 glsl
+{
+	source VT_InfluencePropagate_fp.glsl
+	syntax glsl150
+	
+	default_params
+	{
+		param_named_auto viewport_size viewport_size
+        param_named g_momentum float 0.5
+        param_named g_decay float 0.1
+        param_named g_preserve bool true
+	}
+}
+
+material VT/InfluencePropagate
+{
+	technique 
+	{
+		pass
+		{
+			lighting off
+			depth_check off
+			depth_write off
+			cull_hardware none
+		
+			vertex_program_ref VT/InfluencePropagate/VP_GLSL_150
+			{
+			}
+			
+			fragment_program_ref VT/InfluencePropagate/FP_GLSL_150
+			{
+			}
+
+            texture_unit s_prev
+            {
+                tex_address_mode clamp
+                filtering none
+            }
+		}
+	}
+}
+
+
+
+
+
+
+

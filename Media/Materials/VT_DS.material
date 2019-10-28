@@ -1,0 +1,142 @@
+import * from base.material
+import * from VT.material
+
+vertex_program VT/DS/Display/VP_GLSL_150 glsl
+{
+	source VT_DS_Display_vp.glsl
+	syntax glsl150
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+		param_named_auto worldview_matrix worldview_matrix
+		param_named_auto view_matrix view_matrix
+	}
+}
+
+vertex_program VT/DS/DisplayDelta/VP_GLSL_150 glsl
+{
+	source VT_DS_Display_vp.glsl
+	syntax glsl150
+	preprocessor_defines INCLUDE_DELTA=1
+
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+		param_named_auto worldview_matrix worldview_matrix
+		param_named_auto view_matrix view_matrix
+		param_named_auto deltaFacesPos custom 0
+		param_named_auto deltaFacesNeg custom 1
+	}
+}
+
+fragment_program VT/DS/Display/FP_GLSL_150 glsl
+{
+	source VT_DS_Display_fp.glsl
+	attach DS/Mutator/GLSL_150
+	syntax glsl150
+
+	default_params
+	{
+        shared_params_ref VT/SharedParams
+        param_named s_influence int 0
+		param_named_auto highlight custom 10
+	}
+}
+
+
+vertex_program VT/DS/ShadowCaster/VTF_DEPTH/VP_GLSL_150 glsl
+{
+	source VT_DS_Display_vp.glsl
+	syntax glsl150
+	preprocessor_defines VTF_DEPTH=1
+	
+	default_params
+	{
+		param_named_auto worldviewproj_matrix worldviewproj_matrix
+		param_named_auto worldview_matrix worldview_matrix
+		param_named_auto view_matrix view_matrix
+		param_named_auto texel_offsets texel_offsets
+	}
+}
+
+material VT/DS/Display/ShadowCaster
+{
+    technique
+    {
+        pass
+        {
+			cull_hardware none
+
+            vertex_program_ref VT/DS/ShadowCaster/VTF_DEPTH/VP_GLSL_150
+            {
+            }
+            
+            fragment_program_ref Shadow_Caster_fp/VTF_DEPTH/FP_GLSL
+            //fragment_program_ref ShadowCaster/VTF_DEPTH/FP_GLSL
+            {
+                shared_params_ref Common/SharedParams
+            }
+        }
+    }
+}
+
+
+material VT/DS/Display : BaseAlbedo
+{
+    technique
+    {
+		shadow_caster_material VT/DS/Display/ShadowCaster
+    }
+
+	technique GBuffer
+	{				
+		pass
+		{		
+			cull_hardware none
+		
+			vertex_program_ref VT/DS/Display/VP_GLSL_150 
+			{
+			}
+			fragment_program_ref VT/DS/Display/FP_GLSL_150 
+			{
+			}
+			
+			texture_unit s_influence
+            {
+                tex_address_mode clamp
+            }
+		}
+	}
+}
+
+
+
+material VT/DS/DisplayDelta : BaseAlbedo
+{
+    technique
+    {
+		shadow_caster_material VT/DS/Display/ShadowCaster
+    }
+
+	technique GBuffer
+	{				
+		pass
+		{		
+			cull_hardware none
+		
+			vertex_program_ref VT/DS/DisplayDelta/VP_GLSL_150
+			{
+			}
+			fragment_program_ref VT/DS/Display/FP_GLSL_150 
+			{
+			}
+			
+			texture_unit s_influence
+            {
+                tex_address_mode clamp
+            }
+		}
+	}
+}
+
+
