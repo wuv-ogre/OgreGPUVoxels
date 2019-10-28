@@ -1,6 +1,6 @@
 # OgreGPUVoxels
 
-Geometry generation on gpu by using 3D render volumes as the density function for Ogre3D.
+Geometry generation on gpu by using 3D render volumes as the density function for Ogre3D v1.10 Xalafu.
 
 The approach is (ignoring the technical details)
 
@@ -19,6 +19,8 @@ A single render volume per lowest lod level of a chuck smothing between transiti
 Demo
 
 https://vimeo.com/368979548
+
+The example is not usable in and of itself, rather its a guide as to how to use the lib and debug it
 
 References
 
