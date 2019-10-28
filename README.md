@@ -1,6 +1,6 @@
 # OgreGPUVoxels
 
-Geometry generation on gpu by using 3D render volumes as the density function for Ogre3D v1.10 Xalafu.
+Voxel geometry generation on gpu by using 3D render volumes as the density function for Ogre3D v1.10 Xalafu.
 
 The approach is (ignoring the technical details)
 
@@ -14,7 +14,9 @@ iff a none zero vertex out count, gen triangles on gpu.
 
 A higher level lod stratedy handles the creation and recreation of chucks, including transvoxel faces as needed for the transitions between different lods. Transitions are also created on gpu.
 
-A single render volume per lowest lod level of a chuck smothing between transitions.
+A single render volume per lowest lod level of a chuck allows for smoothing between transitions.
+
+Note, InfluenceVolume is meant for 'directed' texturing and is experimental.
 
 Demo
 
